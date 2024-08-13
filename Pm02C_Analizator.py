@@ -191,18 +191,7 @@ def plot_theme(motyw):                    # Motyw rysowania
             mpl.rcParams['ytick.labelcolor'] = 'yellow'
             mpl.rcParams['axes.titlecolor'] = 'white'
             mpl.rcParams['grid.color'] = '#424242'
-def create_plot(ax, xdata, ydata, color): # Funkcja rysująca wykres 
-    ax.clear()
-    ax.plot(xdata, ydata, color=color) #rysowanie lini
-    minimum = min(ydata)
-    ax.fill_between(xdata, ydata, minimum, color=color, alpha=0.15)
-    ax.set_title('profil zmierzony')
-    ax.set_xlabel('Odcinek pomiarowy [mm]', fontsize = 10)
-    ax.set_ylabel('Wysokość profilu [um]', fontsize = 10)
-    ax.grid(True, linestyle='--')
-    ax.minorticks_on()
 
-    return plt.gcf()
 def draw_figure(figure_Canvas_Agg):           #
     Figure_Canvas_Agg.draw()
     Figure_Canvas_Agg.get_tk_widget().pack(side='top', fill='both', expand=1)
