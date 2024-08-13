@@ -213,9 +213,6 @@ def update_figure(figure_canvas_agg):     #
     Figure_Canvas_Agg.draw()
     Figure_Canvas_Agg.get_tk_widget().pack(side='top', fill='both', expand=1)
     return Figure_Canvas_Agg
-def update_figure(figure_canvas_agg):     #
-    figure_canvas_agg.draw()
-    figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
 def plot_update(index):                   #
     keyParametry = f'Parametry_{index}'
     key_um = f'Dane_um__{index}'
