@@ -1,4 +1,4 @@
-#======================= Biblioteki ==========================#
+#================================= Biblioteki ====================================#
 
 import re
 import serial
@@ -7,12 +7,12 @@ import pandas as pd
 import PySimpleGUI as sg
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg
+#from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.interpolate import CubicSpline
 from scipy.ndimage import gaussian_filter
 
-#========================== Dane =============================#
+#==================================== Dane =======================================#
 
 df = pd.DataFrame()     # Pandas Dataframe
 Dane = {
@@ -26,7 +26,7 @@ Kolory = {
     "linia": 'yellow'
 }
 
-#========================= Funkcje ===========================#
+#=================================== Funkcje =====================================#
 
 def open_file():                          #Do naprawy!!!
     try:
@@ -36,7 +36,7 @@ def open_file():                          #Do naprawy!!!
         
         window['-ML-'].print(df)
        # create_plot(ax, np.linspace(0, Parametry['L'], len(dane_um)), dane_um, Kolory['linia'])
-        update_figure(figure_canvas_agg)
+        draw_figure(Figure_Canvas_Agg, fig)
     except:
         print('nie udało się otworzyć') 
 def data_from_com(recived,number):        # Stwórz dane z otrzymanych informacji za pomocą REGEX
@@ -203,16 +203,12 @@ def create_plot(ax, xdata, ydata, color): # Funkcja rysująca wykres
     ax.minorticks_on()
 
     return plt.gcf()
-def draw_figure(canvas,figure):           #
-    Figure_Canvas_Agg = FigureCanvasTkAgg(figure, canvas)
+def draw_figure(figure_Canvas_Agg):           #
     Figure_Canvas_Agg.draw()
     Figure_Canvas_Agg.get_tk_widget().pack(side='top', fill='both', expand=1)
     return Figure_Canvas_Agg
-def update_figure(figure_canvas_agg):     #
-    Figure_Canvas_Agg.draw()
-    Figure_Canvas_Agg.get_tk_widget().pack(side='top', fill='both', expand=1)
-    return Figure_Canvas_Agg
-def plot_update(index):                   #
+def plot_Redraw(index):                   #
+    ax.clear()
     keyParametry = f'Parametry_{index}'
     key_um = f'Dane_um__{index}'
     try:
@@ -226,10 +222,24 @@ def plot_update(index):                   #
         window['-AD_MAX-'].Update(value=parametry[3])
         window['-AD_POL-'].Update(value=parametry[5])
         window['-DANE_V-'].Update(value=parametry[8])
-        create_plot(ax, np.linspace(0, parametry[7], len(Dane[key_um])), Dane[key_um], Kolory['linia'])
+        xdata = np.linspace(0, parametry[7], len(Dane[key_um]))
+        ydata = Dane[key_um]
+        color = Kolory['linia']
     except:
         print('no data')
-    update_figure(figure_canvas_agg)
+        xdata = [0]
+        ydata = [0]
+        color = Kolory['linia']
+    ax.plot(xdata, ydata, color=color) #rysowanie lini
+    minimum = min(ydata)
+    ax.fill_between(xdata, ydata, minimum, color=color, alpha=0.15)
+    ax.set_title('profil zmierzony')
+    ax.set_xlabel('Odcinek pomiarowy [mm]', fontsize = 10)
+    ax.set_ylabel('Wysokość profilu [um]', fontsize = 10)
+    ax.grid(True, linestyle='--')
+    ax.minorticks_on()
+    Figure_Canvas_Agg.draw()
+    Figure_Canvas_Agg.get_tk_widget().pack(side='top', fill='both', expand=1)
 def Export_figure(path, transparency):    #
     plt.savefig(path, transparent=transparency,)
     print('zapisano')
@@ -284,7 +294,7 @@ def oblicz_para(number):                  #
     textstr = 'Ra',Ra1,'Rz',Rz,'Rsm'
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
         verticalalignment='top', bbox=props)
-    update_figure(figure_canvas_agg)
+    draw_figure(Figure_Canvas_Agg)
     Dane[keyParametry_prof]=[Ra1,Rz,]
     print(Dane[keyParametry_prof])
     return(True)
@@ -304,7 +314,7 @@ def save_to_df(number):                   #
     df[key_um] = Dane[key_um].tolist()
     window['-ML-'].print(df)
      
-#======================== Układ okna =========================#
+#================================== Układ okna ===================================#
 
 sg.theme('Dark Amber')  # Motyw Okna
 datatab1_layout = [     # Zakładka danych RS232
@@ -371,7 +381,7 @@ Input_column = [        # Kolumna wprowadzania danych
      [sg.Text('Plik .CSV'), sg.Input(key='-FILE-', size=(30, 1)),
         sg.FileBrowse(button_text=("wybierz"),file_types=(("plik arkusza", "*.csv"),))],   
 ]
-List_column = [         #
+List_column = [         # Kolumna listy odebranych pomiarów
 [sg.Text('Lista pomiarów')],
 [sg.Listbox(Dane['Blok'], size=(16, 24),key='-LIST-')],
 [sg.Text('motyw \nrysunku'),sg.Combo(['ciemny','jasny'],default_value='ciemny', key='-MOTYW_RYS-', enable_events=True)],
@@ -406,14 +416,14 @@ layout = [              # Główny layout
 ]
 window = sg.Window("PM02C Analizator profilu", layout, finalize=True, resizable=False, margins=(15, 15,))
  
-#=================== Parametry rysowania =====================#
+#============================= Parametry rysowania ===============================#
 
-plot_theme('ciemny')                    # globalna zmiana wyglądu rysunków
-fig, ax = plt.subplots()                #
-create_plot(ax,[0],[0],Kolory['linia']) # Dane początkowe
-figure_canvas_agg = draw_figure(window['-CANVAS-'].TKCanvas, fig)
+plot_theme('ciemny')                    # Globalna zmiana wyglądu rysunków
+fig, ax = plt.subplots()                # Definicja "wykresu"
+Figure_Canvas_Agg = FigureCanvasTkAgg(fig, window['-CANVAS-'].TKCanvas) #Tworzy Pole rysunku
+plot_Redraw(0)                          # Rysuj pusty "wykres"
 
-#=============== Ustawienie portu szeregowego ================#
+#========================= Ustawienie portu szeregowego ==========================#
 
 try:
         x = serial.Serial("/dev/ttyUSB0", 4800, timeout=0.1)
@@ -422,7 +432,7 @@ except:
     print("Brak portu /dev/ttyUSB0")
     x = serial.Serial()
 
-#======================= Główna pętla ========================#
+#================================= Główna pętla ==================================#
 
 number = 0
 activity = False
@@ -464,9 +474,10 @@ while True :
              window['-LIST-'].Update(Dane['Blok'])
         case '-MOTYW_RYS-':
             plot_theme(values['-MOTYW_RYS-'])
-            plot_update(number)                   
+            plot_Redraw(number)                   
         case '-PLOT-':
-            plot_update(number)       
+           try: plot_Redraw(number)
+           except: print('no data')       
         case '-CHKFILTR-':
             print('hello')
         case '-LICZ-':
@@ -495,60 +506,58 @@ while True :
             if event == '-STOP-':
                 x.close()
                 print("Port zamkniety")      
-    if activity == True:                    # Przetwarzanie odczytanych danych
-        match values['-NBLOK-']: #zmina indeksu
+    if activity == True:                    # Przetwarzanie danych po odebraniu
+        match values['-NBLOK-']:        # zmina indeksu
             case 'Nowy Blok':
                 number = len(Dane['Blok'])
                 number = number + 1
                 print(number)
             case 'Wybrany Blok':
                 print(':3')
-        data_from_com(recived,number)
-        oblicz_dane(number)
-        oblicz_para(number)
-        plot_update(number)
-        save_to_df(number)
-        add_to_list(number)
+        data_from_com(recived,number)   # Przetwarzanie odebranych danych
+        oblicz_dane(number)             # Oblicz dane w um z wartośći ADC
+        oblicz_para(number)             # Oblicz parametry profilu
+        plot_Redraw(number)             # Przedstaw zarys profilu na rysunku
+        try: save_to_df(number)         # Zapisz dane do Pandas
+        except: print('DF_ERROR')       # 
+        add_to_list(number)             # Dodaj odnośnik pomiaru do listy w GUI
 
-        activity = False 
+        activity = False                # Potwierdź wykonanie
        
 window.close()  # Poza główną pętlą = zamknij okno
-'''
-dodać informacje o poprawnosci przyjętych danych w oknie terminal: zgodnosc dlugosci
-jeden przycisk zamiast start stop
-opcja włączenia ciągłego odbierania danych
-poprawic otwieranie danych
 
-keys:
--CANVAS-
--ML-
--START-
--STOP-
--SAVE-
--OPEN-
--PLOT-
--RESET-
--LICZ-
--MOTYW_RYS-
--FORMAT-
--CHKFILTR-
--FILTR-
--DANE_Z-
--DANE_L-
--DANE_V-
--GLOWICA-
--LPOM-
--AD_MAX-
--AD_POL-
--TYP-
--DTAB1-
--DTAB2-
--DTAB3-
--FILE-
--EXPRYS-
--EXFIGPATH-
--CHKTRANSPARENT-
--INTERPOLATE-
--LIST-
--NBLOK-
+#=================================================================================#
+#           __________-------____                 ____-------__________           #
+#          \------____-------___--__---------__--___-------____------/            #
+#           \//////// / / / / / \   _-------_   / \ \ \ \ \ \\\\\\\\/             #
+#              \////-/-/------/_/_| /___   ___\ |_\_\------\-\-\\\\/              #
+#                --//// / /  /  //|| (O)\ /(O) ||\\  \  \ \ \\\\--                #
+#                     ---__/  // /| \_  /V\  _/ |\ \\  \__---                     #
+#                          -//  / /\_ ------- _/\ \  \\-                          #
+#                            \_/_/ /\---------/\ \_\_/                            #
+#                                ----\   |   /----                                #
+#                                     | -|- |                                     #
+#                                    /   |   \                                    #
+#                                    ---- \___|                                   #
+#=====================================Notatki=====================================#
+'''
+-dodać informacje o poprawnosci przyjętych danych : zgodnosc dlugosci
+-jeden przycisk zamiast start stop
+-opcja włączenia ciągłego odbierania danych
+-poprawic otwieranie danych 
+
+Keys:
+
+-CANVAS-        -FORMAT-            -DTAB1-
+-ML-            -LPOM-              -DTAB2-
+-START-         -AD_MAX-            -DTAB3-
+-STOP-          -FILTR-             -FILE-
+-SAVE-          -DANE_Z-            -EXPRYS-
+-OPEN-          -DANE_L-            -EXFIGPATH-
+-PLOT-          -DANE_V-            -CHKTRANSPARENT-
+-RESET-         -GLOWICA-           -INTERPOLATE-
+-LICZ-          -AD_POL-            -LIST-
+-CHKFILTR-      -TYP-
+-MOTYW_RYS-     -NBLOK-
+
 '''
