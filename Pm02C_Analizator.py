@@ -209,7 +209,6 @@ def draw_figure(canvas,figure):           #
     Figure_Canvas_Agg.get_tk_widget().pack(side='top', fill='both', expand=1)
     return Figure_Canvas_Agg
 def update_figure(figure_canvas_agg):     #
-    Figure_Canvas_Agg = FigureCanvasTkAgg(figure, canvas)
     Figure_Canvas_Agg.draw()
     Figure_Canvas_Agg.get_tk_widget().pack(side='top', fill='both', expand=1)
     return Figure_Canvas_Agg
